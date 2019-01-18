@@ -287,14 +287,16 @@ define(['src/utils'], (utils) => {
     };
 
     logic.Game = class {
-        constructor({gameOverChecker, onGameOver}) {
+        constructor({gameOverChecker, onGameOver, resetCallback}) {
             this.eachFrameCallbacks = [];
             this.gameOverChecker = gameOverChecker;
             this.onGameOver = onGameOver;
             this.gameOver = false;
+            this.resetCallback = resetCallback;
         }
 
         run() {
+            this.resetCallback();
             utils.runInBackground(() => {
                 if (!this.gameOver) {
                     this.callEachFrameCallbacks();
@@ -325,6 +327,11 @@ define(['src/utils'], (utils) => {
                 if (!this.gameOver)
                     task();
             }, milliseconds)
+        }
+
+        reset() {
+            this.gameOver = false;
+            this.resetCallback();
         }
     };
 
@@ -359,7 +366,7 @@ define(['src/utils'], (utils) => {
 
     logic.constants.cookieHighScoreKey = 'highscore';
 
-    logic.highScore = (cookie) => {
+    logic.highScore = cookie => {
         return cookie.read(logic.constants.cookieHighScoreKey);
     };
 

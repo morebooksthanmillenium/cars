@@ -2,6 +2,23 @@
 
 require(['src/graphics', 'src/logic', 'src/utils', 'src/cookies'], 
         (graphics, logic, utils, cookies) => {
+    const setupControlButton = game => {
+        const controlButton = document.getElementById('controlButton');
+        controlButton.innerHTML = 'Start';
+        controlButton.onclick = () => {
+            game.run();
+            controlButton.hidden = true;
+            controlButton.innerHTML = 'Restart'
+
+            controlButton.onclick = () => {
+                controlButton.hidden = true;
+                game.reset();
+            };
+        };
+
+        return controlButton;
+    };
+
     const main = () => {
         const canvas = new graphics.Canvas(document);
 
@@ -13,7 +30,7 @@ require(['src/graphics', 'src/logic', 'src/utils', 'src/cookies'],
                 canvas.drawRect(part.rect, part.color);
         };
 
-        const playerCar = logic.PlayerCar.atDefaultPosition();
+        let playerCar = logic.PlayerCar.atDefaultPosition();
         let enemyCars = [];
 
         const drawPlayerCar = () => {
@@ -39,14 +56,21 @@ require(['src/graphics', 'src/logic', 'src/utils', 'src/cookies'],
                 canvas.drawRect(decoration.rect, decoration.color);
         };
 
+        const resetCallback = () => {
+            playerCar = logic.PlayerCar.atDefaultPosition();
+            enemyCars = [];
+            keyHandler = new logic.KeyHandler(['ArrowLeft', 'ArrowRight'], document);
+            clearCanvas();
+        };
+
         let distanceTraveled = 0;
 
-        const scoreBasedOnDistanceTraveled = () => Math.floor(distanceTraveled/1000);
+        const calculateScore = () => Math.floor(distanceTraveled/1000);
 
         const cookie = new cookies.Cookie(document);
 
         const showScore = () => {
-            const score = scoreBasedOnDistanceTraveled();
+            const score = calculateScore();
             const highScore = logic.highScore(cookie);
             console.log('High score: '+highScore);
             let outputText = `Final score: ${score}.`;
@@ -92,12 +116,20 @@ require(['src/graphics', 'src/logic', 'src/utils', 'src/cookies'],
             drawEnemyCars();
         };
 
-        const keyHandler = new logic.KeyHandler(['ArrowLeft', 'ArrowRight'], document);
+        let keyHandler = new logic.KeyHandler(['ArrowLeft', 'ArrowRight'], document);
+
+        const onGameOver = () => {
+            controlButton.hidden = false;
+            showScore();
+        }
 
         const game = new logic.Game({
             gameOverChecker: crashHasHappened,
-            onGameOver: showScore
+            onGameOver,
+            resetCallback
         });
+
+        const controlButton = setupControlButton(game);
 
         game.addEachFrameCallback(clearCanvas)
             .addEachFrameCallback(moveAllObjects)
@@ -106,13 +138,13 @@ require(['src/graphics', 'src/logic', 'src/utils', 'src/cookies'],
         
         game.runEveryCalculated(
             () => enemyCars.push(logic.EnemyCar.atRandomPosition()), 
-            () => 2800/playerCar.verticalSpeed);
+            () => 4800/playerCar.verticalSpeed);
         
         game.runEveryCalculated(
             () => decorations.push(logic.decorations.RoadDrawing.atDefaultPosition()),
             () => 2000/playerCar.verticalSpeed);
-
-        game.run();
+        
+        clearCanvas();
     };
 
     main();
