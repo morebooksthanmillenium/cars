@@ -1,6 +1,8 @@
 'use strict';
 
-define(['src/utils'], (utils) => {
+// TODO Could rename this to game.js
+
+define(['src/utils'], utils => {
     const logic = {
         constants: {},
         decorations: {},
@@ -23,46 +25,25 @@ define(['src/utils'], (utils) => {
 
     logic.pointsAreEqual = (p1, p2) => p1.x === p2.x && p1.y === p2.y;
     
-    logic.internal.KeyTracker = class {
-        constructor() {
-            this.isDownMap = new Map();
-        }
-        
-        setKeyDown(key) {
-            this.isDownMap.set(key, true);
-        }
-        
-        setKeyUp(key) {
-            this.isDownMap.set(key, false);
-        }
-        
-        keyIsDown(key) {
-            return this.isDownMap.has(key) ? this.isDownMap.get(key) : false;
-        }
-    };
-
     logic.KeyHandler = class {
         constructor(keysArray, document) {
-            this.keyTracker = new logic.internal.KeyTracker();
+            this.isDownMap = new Map();
             
-            document.addEventListener('keydown', logic.KeyHandler.eventCallbackForKeyInKeys(keysArray, (key) => {
-                this.keyTracker.setKeyDown(key);
-            }));
-
-            document.addEventListener('keyup', logic.KeyHandler.eventCallbackForKeyInKeys(keysArray, (key) => {
-                this.keyTracker.setKeyUp(key);
-            }));
-        }
-        
-        static eventCallbackForKeyInKeys(keysArray, callback) {
-            return (event) => {
+            document.addEventListener('keydown', event => {
                 if (utils.contains(keysArray, event.key))
-                    callback(event.key);
-            };
+                    this.isDownMap.set(event.key, true);
+                }
+            );
+
+            document.addEventListener('keyup', event => {
+                if (utils.contains(keysArray, event.key))
+                    this.isDownMap.set(event.key, false);
+                }
+            );
         }
 
         keyIsDown(key) {
-            return this.keyTracker.keyIsDown(key);
+            return this.isDownMap.has(key) ? this.isDownMap.get(key) : false;
         }
     };
 
@@ -283,55 +264,6 @@ define(['src/utils'], (utils) => {
         moveElements() {
             for (const element of this.elements)
                 element.position.y += this.centerObject.verticalSpeed-element.verticalSpeed;
-        }
-    };
-
-    logic.Game = class {
-        constructor({gameOverChecker, onGameOver, resetCallback}) {
-            this.eachFrameCallbacks = [];
-            this.gameOverChecker = gameOverChecker;
-            this.onGameOver = onGameOver;
-            this.gameOver = false;
-            this.resetCallback = resetCallback;
-        }
-
-        run() {
-            this.resetCallback();
-            utils.runInBackground(() => {
-                if (!this.gameOver) {
-                    this.callEachFrameCallbacks();
-                    this.checkGameOver();
-                }
-            });
-        }
-
-        checkGameOver() {
-            if (this.gameOverChecker()) {
-                this.gameOver = true;
-                this.onGameOver();
-            }
-        }
-
-        callEachFrameCallbacks() {
-            for (const callback of this.eachFrameCallbacks)
-                callback();
-        }
-
-        addEachFrameCallback(callback) {
-            this.eachFrameCallbacks.push(callback);
-            return this;
-        }
-
-        runEveryCalculated(task, milliseconds) {
-            utils.runEveryCalculated(() => {
-                if (!this.gameOver)
-                    task();
-            }, milliseconds)
-        }
-
-        reset() {
-            this.gameOver = false;
-            this.resetCallback();
         }
     };
 
