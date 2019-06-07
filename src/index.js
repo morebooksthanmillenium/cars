@@ -6,7 +6,7 @@ require(['src/graphics', 'src/logic', 'src/utils', 'src/cookies'],
 
     game.setupControlButton = carsGame => {
         const controlButton = document.getElementById('controlButton');
-        controlButton.innerHTML = 'Start';
+        controlButton.innerHTML = 'Go';
         controlButton.onclick = () => {
             carsGame.run();
             controlButton.hidden = true;
